@@ -1,0 +1,196 @@
+// Especificação do parser CUP
+package parser;
+import java_cup.runtime.*;
+import ast.AST;
+import ast.Number;
+import ast.Identifier;
+import ast.Operator;
+import ast.CondOperator;
+import interpreter.Interpreter;
+
+parser code {:
+    public void syntax_error(Symbol s) {
+        System.err.println("Erro de sintaxe. Token inesperado: "
+            + sym.terminalNames[s.sym] +". Linha: "
+            + (s.left + 1) + ", Coluna: " + (s.right + 1));
+    }
+
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception {
+        System.err.println("Erro sintático próximo ao símbolo: "
+            + sym.terminalNames[s.sym] + ". Linha: "
+            + (s.left + 1) + ", Coluna: " + (s.right + 1));
+    }
+:};
+
+// Definição dos terminais
+terminal            SEMI, PLUS, MINUS, TIMES, DIVIDE, MOD;
+terminal            UMINUS, LPAREN, RPAREN, EXP, SIN, COS, ASSIGN;
+terminal            PRINT, READ, LBRACE, RBRACE, IF, THEN, ELSE;
+terminal            EQ, NEQ, LT;
+terminal            AND;
+terminal Double     NUMBER;
+terminal Double     PI;
+terminal String     ID;
+
+// Definição dos não-terminais
+non terminal program;
+non terminal AST stmt_list;
+non terminal AST stmt, numerical_stmt, assignment_stmt;
+non terminal AST input_stmt, output_stmt;
+non terminal AST conditional_stmt, relational_stmt;
+
+// Precedência e associatividade dos operadores
+precedence nonassoc ASSIGN;
+precedence nonassoc ELSE;
+precedence nonassoc IF;
+precedence left AND;
+precedence left EQ, NEQ;
+precedence left LT;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIVIDE, MOD;
+precedence right EXP;
+precedence left UMINUS;
+
+/*
+    Gramática:
+    <program> ::= <stmt_list>
+    <stmt_list> ::= <stmt_list> <stmt> | <stmt>
+    <stmt> ::= "{" <stmt_list> "}"
+            |  <numerical_stmt> ";"
+            |  <assignment_stmt> ";"
+            |  <input_stmt> ";"
+            |  <output_stmt> ";"
+            |  <conditional_stmt>
+    <numerical_stmt>  ::= <numerical_stmt> "+" <numerical_stmt>
+                    |  <numerical_stmt> "-" <numerical_stmt>
+                    |  <numerical_stmt> "*" <numerical_stmt>
+                    |  <numerical_stmt> "/" <numerical_stmt>
+                    |  <numerical_stmt> "%" <numerical_stmt>
+                    |  <numerical_stmt> "**" <numerical_stmt>
+                    | "-" <numerical_stmt>
+                    | "(" <numerical_stmt> ")"
+                    | number
+                    | identifier
+                    | PI
+                    | "cos" "(" <numerical_stmt> ")"
+                    | "sin" "(" <numerical_stmt> ")"
+    <assignment_stmt>  ::= identifier "=" <numerical_stmt>
+    <input_stmt> ::= "read" "(" identifier ")"
+    <output_stmt> ::= "print" "(" <numerical_stmt> ")"
+    <conditional_stmt> ::= "if" <relational_stmt> "then" <stmt>
+                        |  "if" <relational_stmt> "then" <stmt> "else" <stmt>
+    <relational_stmt> ::= <numerical_stmt> "==" <numerical_stmt>
+                    |  <numerical_stmt> "!=" <numerical_stmt>
+*/
+
+// Regras da gramática no CUP
+
+// <program> ::= <stmt_list>
+program ::= stmt_list:s {: Interpreter.interpret(s); :}
+    ;
+
+// <stmt_list> ::= <stmt_list> <stmt> | <stmt>
+stmt_list ::= stmt_list:s1 stmt:s2
+        {: RESULT = AST.create(s1, s2); :}
+    | stmt:s {: RESULT = s; :}
+    ;
+
+// <stmt> ::= "{" <stmt_list> "}"
+//         |  <numerical_stmt> ";"
+//         |  <assignment_stmt> ";"
+//         |  <input_stmt> ";"
+//         |  <output_stmt> ";"
+//         |  <conditional_stmt>
+stmt ::= LBRACE stmt_list:s RBRACE
+        {: RESULT = s; :}
+    | numerical_stmt:s
+        {: RESULT = s; :} SEMI
+    | assignment_stmt:s
+        {: RESULT = s; :} SEMI
+    | input_stmt:s
+        {: RESULT = s; :} SEMI
+    | output_stmt:s
+        {: RESULT = s; :} SEMI
+    | conditional_stmt:s
+        {: RESULT = s; :}
+    | error
+    ;
+
+
+
+// <numerical_stmt>  ::= <numerical_stmt> "+" <numerical_stmt>
+//                 |  <numerical_stmt> "-" <numerical_stmt>
+//                 |  <numerical_stmt> "*" <numerical_stmt>
+//                 |  <numerical_stmt> "/" <numerical_stmt>
+//                 |  <numerical_stmt> "%" <numerical_stmt>
+//                 |  <numerical_stmt> "**" <numerical_stmt>
+//                 | "-" <numerical_stmt>
+//                 | "(" <numerical_stmt> ")"
+//                 | number
+//                 | identifier
+//                 | PI
+//                 | "sin" "(" <numerical_stmt> ")"
+//                 | "cos" "(" <numerical_stmt> ")"
+numerical_stmt ::= numerical_stmt:e1 PLUS numerical_stmt:e2
+        {: RESULT = Operator.create(sym.PLUS, e1, e2); :}
+    | numerical_stmt:e1 MINUS numerical_stmt:e2
+        {: RESULT = Operator.create(sym.MINUS, e1, e2); :}
+    | numerical_stmt:e1 TIMES numerical_stmt:e2
+        {: RESULT = Operator.create(sym.TIMES, e1, e2); :}
+    | numerical_stmt:e1 DIVIDE numerical_stmt:e2
+        {: RESULT = Operator.create(sym.DIVIDE, e1, e2); :}
+    | numerical_stmt:e1 MOD numerical_stmt:e2
+        {: RESULT = Operator.create(sym.MOD, e1, e2); :}
+    | numerical_stmt:e1 EXP numerical_stmt:e2
+        {: RESULT = Operator.create(sym.EXP, e1, e2); :}
+    | MINUS numerical_stmt:e
+        {: RESULT = Operator.create(sym.UMINUS, e); :} %prec UMINUS
+    | LPAREN numerical_stmt:e RPAREN
+        {: RESULT = e; :}
+    | ID:id
+        {: RESULT = Identifier.create(id); :}
+    | NUMBER:n
+        {: RESULT = Number.create(n); :}
+    | PI:n
+        {: RESULT = Number.create(n); :}
+    | SIN LPAREN numerical_stmt:e RPAREN
+        {: RESULT = Operator.create(sym.SIN, e); :}
+    | COS LPAREN numerical_stmt:e RPAREN
+        {: RESULT = Operator.create(sym.COS, e); :}
+    ;
+
+// <assignment_stmt>  ::= identifier "=" <numerical_stmt>
+assignment_stmt ::= ID:id ASSIGN numerical_stmt:e
+        {: RESULT = Operator.create(sym.ASSIGN, Identifier.create(id), e); :}
+    ;
+
+// <input_stmt> ::= "read" "(" identifier ")"
+input_stmt ::= READ LPAREN ID:id RPAREN
+        {: RESULT = Operator.create(sym.READ, Identifier.create(id)); :}
+    ;
+
+// <output_stmt> ::= "print" "(" <numerical_stmt> ")"
+output_stmt ::= PRINT LPAREN numerical_stmt:e RPAREN
+        {: RESULT = Operator.create(sym.PRINT, e); :}
+    ;
+
+// <conditional_stmt> ::= "if" <relational_stmt> "then" <stmt>
+//                     |  "if" <relational_stmt> "then" <stmt> "else" <stmt>
+conditional_stmt ::= IF relational_stmt:r THEN stmt:s
+        {: RESULT = CondOperator.create(sym.IF, r, s); :}
+    | IF relational_stmt:r THEN stmt:s1 ELSE stmt:s2
+        {: RESULT = CondOperator.create(sym.IF, r, s1, s2); :}
+    ;
+
+// <relational_stmt> ::= <numerical_stmt> "==" <numerical_stmt>
+//                 |  <numerical_stmt> "!=" <numerical_stmt>
+relational_stmt ::= numerical_stmt:n1 EQ numerical_stmt:n2
+        {: RESULT = Operator.create( sym.EQ, n1, n2 ); :}
+    | numerical_stmt:n1 NEQ numerical_stmt:n2
+        {: RESULT = Operator.create( sym.NEQ, n1, n2 ); :}
+    | numerical_stmt:n1 LT numerical_stmt:n2
+        {: RESULT = Operator.create( sym.LT, n1, n2 ); :}
+    | relational_stmt:r1 AND relational_stmt:r2
+        {: RESULT = Operator.create( sym.AND, r1, r2 ); :}
+    ;
+
