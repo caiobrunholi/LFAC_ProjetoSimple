@@ -38,9 +38,12 @@ identifier = [A-Za-z][A-Za-z0-9]*
 "print"         { return symbol(sym.PRINT); }
 "read"          { return symbol(sym.READ); }
 "if"            { return symbol(sym.IF); }
+"while"            { return symbol(sym.WHILE); }
 "then"          { return symbol(sym.THEN); }
 "else"          { return symbol(sym.ELSE); }
+"or"            { return symbol(sym.OR); }
 "and"           { return symbol(sym.AND); }
+"not"           { return symbol(sym.NOT); }
 {identifier}    { return symbol(sym.ID, yytext()); }
 "="             { return symbol(sym.ASSIGN); }
 ";"             { return symbol(sym.SEMI); }
@@ -57,6 +60,9 @@ identifier = [A-Za-z][A-Za-z0-9]*
 "=="            { return symbol(sym.EQ); }
 "!="            { return symbol(sym.NEQ); }
 "<"             { return symbol(sym.LT); }
+">"             { return symbol(sym.GT); }
+"<="             { return symbol(sym.ELT); }
+">="             { return symbol(sym.EGT); }
 
 {number}        { return symbol(sym.NUMBER,
                                 Double.valueOf(yytext())); }

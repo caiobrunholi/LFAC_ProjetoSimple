@@ -10,32 +10,38 @@ public interface sym {
   /* terminals */
   public static final int TIMES = 5;
   public static final int MOD = 7;
-  public static final int AND = 25;
+  public static final int AND = 30;
   public static final int READ = 16;
-  public static final int LT = 24;
+  public static final int LT = 25;
   public static final int ELSE = 21;
   public static final int SIN = 12;
   public static final int PLUS = 3;
+  public static final int OR = 29;
   public static final int RBRACE = 18;
   public static final int RPAREN = 10;
   public static final int THEN = 20;
+  public static final int WHILE = 22;
   public static final int COS = 13;
   public static final int SEMI = 2;
+  public static final int NOT = 31;
+  public static final int ELT = 27;
   public static final int IF = 19;
+  public static final int GT = 26;
   public static final int LBRACE = 17;
   public static final int LPAREN = 9;
-  public static final int ID = 28;
+  public static final int ID = 34;
   public static final int EXP = 11;
-  public static final int NUMBER = 26;
+  public static final int EGT = 28;
+  public static final int NUMBER = 32;
   public static final int EOF = 0;
   public static final int DIVIDE = 6;
-  public static final int PI = 27;
+  public static final int PI = 33;
   public static final int MINUS = 4;
   public static final int PRINT = 15;
   public static final int error = 1;
-  public static final int EQ = 22;
+  public static final int EQ = 23;
   public static final int ASSIGN = 14;
-  public static final int NEQ = 23;
+  public static final int NEQ = 24;
   public static final int UMINUS = 8;
   public static final String[] terminalNames = new String[] {
   "EOF",
@@ -60,10 +66,16 @@ public interface sym {
   "IF",
   "THEN",
   "ELSE",
+  "WHILE",
   "EQ",
   "NEQ",
   "LT",
+  "GT",
+  "ELT",
+  "EGT",
+  "OR",
   "AND",
+  "NOT",
   "NUMBER",
   "PI",
   "ID"

@@ -30,17 +30,32 @@ public class Interpreter {
                 CondOperator op = (CondOperator) ast;
                 // daí obter a expressão relacional
                 AST relExp = op.getRelStmt();
-                // interpretar esta expressão
-                interpret(relExp);
-                // neste caso, deve-se verificar qual o valor booleano
-                // retornado pela condição do operador
-                Boolean b = (Boolean) relExp.getValue();
-                // de acordo com o valor da expressão, interpretar o
-                // lado esquerdo (if) ou direito (else), se existir
-                if (b == true) {
-                    interpret(ast.getLeftAST());
-                } else if (ast.getRightAST() != null) {
-                    interpret(ast.getRightAST());
+                if (op.getOperatorSymbol() == sym.IF){
+                    // interpretar esta expressão
+                    interpret(relExp);
+                    // neste caso, deve-se verificar qual o valor booleano
+                    // retornado pela condição do operador
+                    Boolean b = (Boolean) relExp.getValue();
+                    // de acordo com o valor da expressão, interpretar o
+                    // lado esquerdo (if) ou direito (else), se existir
+                    if (b == true) {
+                        interpret(ast.getLeftAST());
+                    } else if (ast.getRightAST() != null) {
+                        interpret(ast.getRightAST());
+                    }
+                } else if (op.getOperatorSymbol() == sym.WHILE){
+                    // interpretar esta expressão
+                    interpret(relExp);
+                    // neste caso, deve-se verificar qual o valor booleano
+                    // retornado pela condição do operador
+                    Boolean b = (Boolean) relExp.getValue();
+                    // de acordo com o valor da expressão, interpretar o
+                    // lado esquerdo (if) ou direito (else), se existir
+                    while (b == true) {
+                        interpret(ast.getLeftAST());
+                        interpret(relExp);
+                        b = (Boolean) relExp.getValue();
+                    }
                 }
             } else { // comandos sequenciais
                 // processar a AST esquerda
@@ -166,11 +181,44 @@ public class Interpreter {
                             operator.setValue(v1.doubleValue() < v2.doubleValue());
                             break;
                         }
+                        case sym.GT: {
+                            Double v1 = (Double) leftAST.getValue();
+                            AST rightAST = operator.getRightAST();
+                            Double v2 = (Double) rightAST.getValue();
+                            operator.setValue(v1.doubleValue() > v2.doubleValue());
+                            break;
+                        }
+                        case sym.ELT: {
+                            Double v1 = (Double) leftAST.getValue();
+                            AST rightAST = operator.getRightAST();
+                            Double v2 = (Double) rightAST.getValue();
+                            operator.setValue(v1.doubleValue() <= v2.doubleValue());
+                            break;
+                        }
+                        case sym.EGT: {
+                            Double v1 = (Double) leftAST.getValue();
+                            AST rightAST = operator.getRightAST();
+                            Double v2 = (Double) rightAST.getValue();
+                            operator.setValue(v1.doubleValue() >= v2.doubleValue());
+                            break;
+                        }
+                        case sym.OR: {
+                            Boolean b1 = (Boolean) leftAST.getValue();
+                            AST rightAST = operator.getRightAST();
+                            Boolean b2 = (Boolean) rightAST.getValue();
+                            operator.setValue(b1.booleanValue() || b2.booleanValue());
+                            break;
+                        }
                         case sym.AND: {
                             Boolean b1 = (Boolean) leftAST.getValue();
                             AST rightAST = operator.getRightAST();
                             Boolean b2 = (Boolean) rightAST.getValue();
                             operator.setValue(b1.booleanValue() && b2.booleanValue());
+                            break;
+                        }
+                        case sym.NOT: {
+                            Boolean b1 = (Boolean) leftAST.getValue();
+                            operator.setValue(!b1.booleanValue() );
                             break;
                         }
                     }

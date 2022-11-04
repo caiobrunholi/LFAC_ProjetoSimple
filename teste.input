@@ -1,5 +1,9 @@
 read(a);
 read(b);
 
-if a == 0 and b < 7 then
+
+if (a == 10) then
     print(a);
+
+while a == 10
+    read(a);

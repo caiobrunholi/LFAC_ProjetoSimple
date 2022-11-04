@@ -25,9 +25,11 @@ parser code {:
 // Definição dos terminais
 terminal            SEMI, PLUS, MINUS, TIMES, DIVIDE, MOD;
 terminal            UMINUS, LPAREN, RPAREN, EXP, SIN, COS, ASSIGN;
-terminal            PRINT, READ, LBRACE, RBRACE, IF, THEN, ELSE;
-terminal            EQ, NEQ, LT;
+terminal            PRINT, READ, LBRACE, RBRACE, IF, THEN, ELSE, WHILE;
+terminal            EQ, NEQ, LT, GT,  ELT, EGT;
+terminal            OR;
 terminal            AND;
+terminal            NOT;
 terminal Double     NUMBER;
 terminal Double     PI;
 terminal String     ID;
@@ -37,15 +39,17 @@ non terminal program;
 non terminal AST stmt_list;
 non terminal AST stmt, numerical_stmt, assignment_stmt;
 non terminal AST input_stmt, output_stmt;
-non terminal AST conditional_stmt, relational_stmt;
+non terminal AST conditional_stmt, relational_stmt, while_stmt;
 
 // Precedência e associatividade dos operadores
 precedence nonassoc ASSIGN;
 precedence nonassoc ELSE;
 precedence nonassoc IF;
+precedence left OR;
 precedence left AND;
+precedence left NOT;
 precedence left EQ, NEQ;
-precedence left LT;
+precedence left LT, GT,  ELT, EGT;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIVIDE, MOD;
 precedence right EXP;
@@ -113,6 +117,8 @@ stmt ::= LBRACE stmt_list:s RBRACE
         {: RESULT = s; :} SEMI
     | conditional_stmt:s
         {: RESULT = s; :}
+    | while_stmt:s 
+        {: RESULT = s; :} 
     | error
     ;
 
@@ -182,6 +188,11 @@ conditional_stmt ::= IF relational_stmt:r THEN stmt:s
         {: RESULT = CondOperator.create(sym.IF, r, s1, s2); :}
     ;
 
+// <while_stmt> ::= "while" <relational_stmt > <stmt>
+while_stmt ::= WHILE relational_stmt:r stmt:s
+        {: RESULT = CondOperator.create(sym.WHILE, r, s); :}
+    ;
+
 // <relational_stmt> ::= <numerical_stmt> "==" <numerical_stmt>
 //                 |  <numerical_stmt> "!=" <numerical_stmt>
 relational_stmt ::= numerical_stmt:n1 EQ numerical_stmt:n2
@@ -190,7 +201,20 @@ relational_stmt ::= numerical_stmt:n1 EQ numerical_stmt:n2
         {: RESULT = Operator.create( sym.NEQ, n1, n2 ); :}
     | numerical_stmt:n1 LT numerical_stmt:n2
         {: RESULT = Operator.create( sym.LT, n1, n2 ); :}
+    | numerical_stmt:n1 GT numerical_stmt:n2
+        {: RESULT = Operator.create( sym.GT, n1, n2 ); :}
+    | numerical_stmt:n1 ELT numerical_stmt:n2
+        {: RESULT = Operator.create( sym.ELT, n1, n2 ); :}
+    | numerical_stmt:n1 EGT numerical_stmt:n2
+        {: RESULT = Operator.create( sym.EGT, n1, n2 ); :}
+    | relational_stmt:r1 OR relational_stmt:r2
+        {: RESULT = Operator.create( sym.OR, r1, r2 ); :}
     | relational_stmt:r1 AND relational_stmt:r2
         {: RESULT = Operator.create( sym.AND, r1, r2 ); :}
+    | NOT relational_stmt:r1 
+        {: RESULT = Operator.create( sym.NOT, r1 ); :}
+    | LPAREN relational_stmt:r1 RPAREN
+        {: RESULT = r1; :}
     ;
+
 
